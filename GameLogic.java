@@ -73,6 +73,76 @@ public class GameLogic {
         }
     }
 
+    // ---SNAPSHOT ---
+        /**
+     * Construye un snapshot completo del estado actual del juego.
+     *
+     * @return instancia de GameSnapshot con jugador, cocodrilos, frutas y estado global
+     */
+    public GameSnapshot buildSnapshot() {
+        // 1. Snapshot del jugador
+        GameSnapshot.PlayerSnapshot pSnap =
+            new GameSnapshot.PlayerSnapshot(
+                player.getX(),
+                player.getY(),
+                player.getLives(),
+                player.getScore(),
+                player.isOnVine()
+            );
+
+        // 2. Snapshot de cocodrilos
+        List<GameSnapshot.CrocSnapshot> crocSnaps =
+            new ArrayList<GameSnapshot.CrocSnapshot>();
+
+        for (Croc c : crocManager.getAllCrocs()) {
+            if (c != null) {
+                String type;
+                if (c instanceof RedCroc) {
+                    type = "RED";
+                } else if (c instanceof BlueCroc) {
+                    type = "BLUE";
+                } else {
+                    type = "UNKNOWN";
+                }
+
+                GameSnapshot.CrocSnapshot cs =
+                    new GameSnapshot.CrocSnapshot(
+                        type,
+                        c.getVine().getId(),
+                        c.getX(),
+                        c.getY(),
+                        c.isAlive()
+                    );
+                crocSnaps.add(cs);
+            }
+        }
+
+        // 3. Snapshot de frutas
+        List<GameSnapshot.FruitSnapshot> fruitSnaps =
+            new ArrayList<GameSnapshot.FruitSnapshot>();
+
+        for (Fruit f : fruits) {
+            GameSnapshot.FruitSnapshot fs =
+                new GameSnapshot.FruitSnapshot(
+                    f.getX(),
+                    f.getY(),
+                    f.getPoints(),
+                    f.isActive()
+                );
+            fruitSnaps.add(fs);
+        }
+
+        // 4. Snapshot global
+        return new GameSnapshot(
+            pSnap,
+            crocSnaps,
+            fruitSnaps,
+            level,
+            speedMul
+        );
+    }
+
+
     // --- LOOP DE JUEGO ---
 
     public void updatePlayerFromClient(Integer newX, Integer newY) {
