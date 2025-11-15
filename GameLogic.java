@@ -3,9 +3,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Lógica principal del juego (lado servidor, sin red).
- * - Mantiene jugador(es), crocs, frutas, vines fijas.
- * - Aplica reglas al recibir posiciones desde C.
+ * Lógica principal del juego en el servidor.
+ * Mantiene y actualiza el estado del jugador, cocodrilos, frutas y lianas.
  */
 public class GameLogic {
 
@@ -13,103 +12,99 @@ public class GameLogic {
     private final CrocManager crocManager;
     private final List<Fruit> fruits;
 
-    private final Player player;      // si luego tienes 2, se extiende
-    private int level = 1;
-    private float speedMul = 1.0f;
+    private final Player player;
+    private Integer level = Integer.valueOf(1);
+    private Float speedMul = Float.valueOf(1.0f);
 
+    /** Constructor: inicializa mapa, jugador y manejadores. */
     public GameLogic() {
         this.vines = GameConfig.createVines();
         this.crocManager = new CrocManager();
-        this.fruits = new ArrayList<>();
-
-        // Posición inicial de Jr (ajusta según tu mapa)
-        this.player = new Player(5, 25, 3);
+        this.fruits = new ArrayList<Fruit>();
+        this.player = new Player(Integer.valueOf(5), Integer.valueOf(25), Integer.valueOf(3));
     }
 
+    /** @return jugador del juego */
     public Player getPlayer() { return player; }
+
+    /** @return cocodrilos activos */
     public Iterable<Croc> getCrocs() { return crocManager.getAllCrocs(); }
+
+    /** @return frutas activas */
     public List<Fruit> getFruits() { return fruits; }
+
+    /** @return arreglo de lianas */
     public Vine[] getVines() { return vines; }
 
-    public int getLevel() { return level; }
-    public float getSpeedMul() { return speedMul; }
+    /** @return nivel actual */
+    public Integer getLevel() { return level; }
 
-    // ================== Admin API ==================
+    /** @return multiplicador de velocidad */
+    public Float getSpeedMul() { return speedMul; }
 
-    public boolean adminSpawnRedCroc(int vineId, int y, int baseSpeed) {
+    // --- ADMIN ---
+
+    public Boolean adminSpawnRedCroc(Integer vineId, Integer y, Integer baseSpeed) {
         Vine v = findVine(vineId);
-        if (v == null) return false;
-        int speed = Math.max(1, Math.round(baseSpeed * speedMul));
-        return crocManager.spawnRed(v, y, speed) != null;
+        if (v == null) return Boolean.FALSE;
+        Integer speed = Integer.valueOf(Math.max(1, Math.round(baseSpeed * speedMul)));
+        return Boolean.valueOf(crocManager.spawnRed(v, y, speed) != null);
     }
 
-    public boolean adminSpawnBlueCroc(int vineId, int y, int baseSpeed) {
+    public Boolean adminSpawnBlueCroc(Integer vineId, Integer y, Integer baseSpeed) {
         Vine v = findVine(vineId);
-        if (v == null) return false;
-        int speed = Math.max(1, Math.round(baseSpeed * speedMul));
-        return crocManager.spawnBlue(v, y, speed) != null;
+        if (v == null) return Boolean.FALSE;
+        Integer speed = Integer.valueOf(Math.max(1, Math.round(baseSpeed * speedMul)));
+        return Boolean.valueOf(crocManager.spawnBlue(v, y, speed) != null);
     }
 
-    public void adminCreateFruit(int x, int y, int points) {
+    public void adminCreateFruit(Integer x, Integer y, Integer points) {
         fruits.add(new Fruit(x, y, points));
     }
 
-    public void adminDeleteFruitAt(int x, int y) {
+    public void adminDeleteFruitAt(Integer x, Integer y) {
         Iterator<Fruit> it = fruits.iterator();
         while (it.hasNext()) {
             Fruit f = it.next();
-            if (f.getX() == x && f.getY() == y) {
+            if (f.getX().equals(x) && f.getY().equals(y)) {
                 it.remove();
                 return;
             }
         }
     }
 
-    // ================== Loop del servidor ==================
+    // --- LOOP DE JUEGO ---
 
-    /**
-     * El cliente C envía la posición nueva del jugador.
-     * Aquí la validamos y actualizamos estado del juego.
-     */
-    public void updatePlayerFromClient(int newX, int newY) {
-        // Chequear abismo
+    public void updatePlayerFromClient(Integer newX, Integer newY) {
         if (GameConfig.isAbyss(newY)) {
             handlePlayerFall();
             return;
         }
 
-        // Actualizar posición
         player.setPosition(newX, newY);
 
-        // Marcar si está en una vine
-        boolean onVine = isOnAnyVine(newX, newY);
+        Boolean onVine = isOnAnyVine(newX, newY);
         player.setOnVine(onVine);
 
-        // Verificar win
         if (GameConfig.isGoalPosition(newX, newY)) {
             handleWin();
             return;
         }
 
-        // Colisiones con crocs
         checkCrocCollisions();
-
-        // Colisiones con frutas
         checkFruitCollisions();
     }
 
-    /** Llamar cada tick del servidor para mover crocs. */
     public void updateEnemies() {
         crocManager.updateAll();
     }
 
-    // ================== Reglas internas ==================
+    // --- REGLAS INTERNAS ---
 
     private void handlePlayerFall() {
         player.loseLife();
         if (player.getLives() <= 0) {
-            // game over para ese jugador
-            // aquí podrías marcar un flag o enviar evento
+            // game over aquí si quieres
         } else {
             respawnPlayer();
         }
@@ -117,38 +112,30 @@ public class GameLogic {
 
     private void handleWin() {
         player.gainLife();
-        level++;
-        speedMul += 0.25f; // o el factor que pida la tarea
+        level = Integer.valueOf(level + 1);
+        speedMul = Float.valueOf(speedMul + 0.25f);
         resetLevel();
     }
 
     private void resetLevel() {
-        // Limpia crocs y frutas, respawnea jugador, etc.
-        // Simplificado:
         fruits.clear();
-        // no hay método clear en CrocManager, pero podrías recrearlo o añadir clear().
+        crocManager.clear();
         respawnPlayer();
     }
 
     private void respawnPlayer() {
-        // Ajusta a la posición inicial de tu mapa
-        player.setPosition(5, 25);
-        player.setOnVine(false);
+        player.setPosition(Integer.valueOf(5), Integer.valueOf(25));
+        player.setOnVine(Boolean.FALSE);
     }
 
     private void checkCrocCollisions() {
-        int px = player.getX();
-        int py = player.getY();
-
+        Integer px = player.getX();
+        Integer py = player.getY();
         for (Croc c : crocManager.getAllCrocs()) {
             if (c != null && c.isAlive()) {
-                if (c.getX() == px && c.getY() == py) {
+                if (c.getX().equals(px) && c.getY().equals(py)) {
                     player.loseLife();
-                    if (player.getLives() <= 0) {
-                        // game over
-                    } else {
-                        respawnPlayer();
-                    }
+                    if (player.getLives() > 0) respawnPlayer();
                     return;
                 }
             }
@@ -156,27 +143,26 @@ public class GameLogic {
     }
 
     private void checkFruitCollisions() {
-        int px = player.getX();
-        int py = player.getY();
-
+        Integer px = player.getX();
+        Integer py = player.getY();
         for (Fruit f : fruits) {
-            if (f.isActive() && f.getX() == px && f.getY() == py) {
+            if (f.isActive() && f.getX().equals(px) && f.getY().equals(py)) {
                 player.addScore(f.getPoints());
                 f.collect();
             }
         }
     }
 
-    private boolean isOnAnyVine(int x, int y) {
+    private Boolean isOnAnyVine(Integer x, Integer y) {
         for (Vine v : vines) {
-            if (v.contains(x, y)) return true;
+            if (v.contains(x, y)) return Boolean.TRUE;
         }
-        return false;
+        return Boolean.FALSE;
     }
 
-    private Vine findVine(int vineId) {
+    private Vine findVine(Integer vineId) {
         for (Vine v : vines) {
-            if (v.getId() == vineId) return v;
+            if (v.getId().equals(vineId)) return v;
         }
         return null;
     }

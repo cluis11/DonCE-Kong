@@ -1,19 +1,30 @@
+/**
+ * Cocodrilo azul.
+ * Desciende por la liana hasta salir de ella y luego desaparece.
+ */
 public class BlueCroc extends Croc {
 
-    private final int speed;
+    private final Integer speed;
 
-    public BlueCroc(Vine vine, int initialY, int speed) {
+    /**
+     * Crea un cocodrilo azul.
+     *
+     * @param vine liana por la que descenderá
+     * @param initialY posición inicial
+     * @param speed velocidad de descenso
+     */
+    public BlueCroc(Vine vine, Integer initialY, Integer speed) {
         super(vine, initialY);
         this.speed = Math.max(1, speed);
     }
 
+    /** Mueve el cocodrilo hacia abajo; muere al salir de la liana. */
     @Override
     public void update() {
         if (!alive) return;
 
         y += speed;
 
-        // Si se salió de la vine, cae y muere
         if (y > vine.getYBottom()) {
             kill();
         }

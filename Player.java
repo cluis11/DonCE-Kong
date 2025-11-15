@@ -1,11 +1,23 @@
+/**
+ * Representa al jugador principal (Donkey Kong Jr).
+ * Su posición es enviada por el cliente C y validada en el servidor.
+ */
 public class Player {
-    private int x;
-    private int y;
-    private int lives;
-    private int score;
-    private boolean onVine;
 
-    public Player(int x, int y, int lives) {
+    private Integer x;
+    private Integer y;
+    private Integer lives;
+    private Integer score;
+    private Boolean onVine;
+
+    /**
+     * Crea un nuevo jugador.
+     *
+     * @param x posición inicial en X
+     * @param y posición inicial en Y
+     * @param lives cantidad inicial de vidas
+     */
+    public Player(Integer x, Integer y, Integer lives) {
         this.x = x;
         this.y = y;
         this.lives = lives;
@@ -13,29 +25,56 @@ public class Player {
         this.onVine = false;
     }
 
-    public int getX() { return x; }
-    public int getY() { return y; }
-    public int getLives() { return lives; }
-    public int getScore() { return score; }
-    public boolean isOnVine() { return onVine; }
+    /** @return coordenada X del jugador */
+    public Integer getX() { return x; }
 
-    public void setPosition(int x, int y) {
+    /** @return coordenada Y del jugador */
+    public Integer getY() { return y; }
+
+    /** @return número actual de vidas */
+    public Integer getLives() { return lives; }
+
+    /** @return puntaje actual */
+    public Integer getScore() { return score; }
+
+    /** @return true si el jugador se encuentra en una liana */
+    public Boolean isOnVine() { return onVine; }
+
+    /**
+     * Actualiza la posición del jugador.
+     *
+     * @param x nueva coordenada X
+     * @param y nueva coordenada Y
+     */
+    public void setPosition(Integer x, Integer y) {
         this.x = x;
         this.y = y;
     }
 
-    public void setOnVine(boolean onVine) {
+    /**
+     * Define si el jugador se encuentra en una liana.
+     *
+     * @param onVine true si está sobre una liana
+     */
+    public void setOnVine(Boolean onVine) {
         this.onVine = onVine;
     }
 
-    public void addScore(int points) {
+    /**
+     * Incrementa el puntaje del jugador.
+     *
+     * @param points puntos a sumar
+     */
+    public void addScore(Integer points) {
         this.score += points;
     }
 
+    /** Resta una vida al jugador. */
     public void loseLife() {
         if (lives > 0) lives--;
     }
 
+    /** Agrega una vida al jugador. */
     public void gainLife() {
         lives++;
     }
